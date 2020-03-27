@@ -12,7 +12,8 @@ import argparse
 from statistic_test import statistic_test
 import sys
 import constants
-
+import cv2
+import matplotlib.pyplot as plt
 
 def obtain_similarity_metrics(GT_img, distorted_img):
     # MEAN SQUARED ERROR
@@ -42,9 +43,9 @@ def main():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path_run', help='path to the run folder.')
-    parser.add_argument('--metrics_excel_name', help='metrics excel name + .xlsx')
-    parser.add_argument('--test_excel_name', help='statistic test excel name + .xlsx')
+    parser.add_argument('--path_run', default="images/", help='path to the run folder.')
+    parser.add_argument('--metrics_excel_name', default="metrics.xlsx", help='metrics excel name + .xlsx')
+    parser.add_argument('--test_excel_name', default="statistic_test.xlsx", help='statistic test excel name + .xlsx')
     parser.add_argument('--methods_used', default=6, type=int,  help='different methods used')
     parsed_args = parser.parse_args(sys.argv[1:])
 
@@ -58,20 +59,17 @@ def main():
     folders_dir = 1
 
     for case_folder in listdir(path_run):
-
-        metric = 0
         modified_idx = 0
 
         original_img = io.imread(os.path.join(path_run, case_folder, constants.reference_img))
+        x_size = original_img.shape[0]
+        y_size = original_img.shape[1]
 
         for impainted_img in (listdir(os.path.join(path_run, case_folder))):
             if impainted_img.startswith(constants.distorted_img):
                 modified_idx += 1
-                modified_img = io.imread(os.path.join(path_run, case_folder, impainted_img))
 
-                x_size = modified_img.shape[0]
-                y_size = modified_img.shape[1]
-                original_img = np.resize(original_img, [x_size, y_size, 3])
+                modified_img = cv2.resize(io.imread(os.path.join(path_run, case_folder, impainted_img)), (y_size, x_size))
 
                 mse_value, ssim_value, psnr_value, rmse_value, vif_value, uqi_value, msssim_value, p_hvs_m_value, p_hvs_value = obtain_similarity_metrics(original_img, modified_img)
 
@@ -82,7 +80,7 @@ def main():
                     ['RMSE', rmse_value],
                     ['VIF', vif_value],
                     ['UQI', uqi_value],
-                    ['MSSSIM', msssim_value],
+                    ['MSSSIM', msssim_value.real],
                     ['PSNR-HVS-M', p_hvs_m_value],
                     ['PSNR-HVS', p_hvs_value],
                 )
